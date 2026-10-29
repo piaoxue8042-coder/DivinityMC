@@ -123,8 +123,18 @@ public final class ArmorConfig {
             var id = BuiltInRegistries.ITEM.getKey(item);
             if (id.getNamespace().equals("minecraft") && item instanceof ArmorItem armor) {
                 JsonObject row = new JsonObject(); row.addProperty("id", id.toString());
-                row.addProperty("physical", item == Items.TURTLE_HELMET ? 8 : armor.getDefense() * 2);
-                row.addProperty("magic", item == Items.TURTLE_HELMET ? 4 : armor.getDefense());
+                int physical = armor.getDefense() * 2;
+                int magic = armor.getDefense();
+                if (item == Items.TURTLE_HELMET) {
+                    physical = 12;
+                    magic = 0;
+                } else if (item == Items.GOLDEN_HELMET || item == Items.GOLDEN_CHESTPLATE
+                    || item == Items.GOLDEN_LEGGINGS || item == Items.GOLDEN_BOOTS) {
+                    physical = armor.getDefense();
+                    magic = armor.getDefense() * 2;
+                }
+                row.addProperty("physical", physical);
+                row.addProperty("magic", magic);
                 equipment.add(row);
             }
         });
