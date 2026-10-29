@@ -1,6 +1,7 @@
 ### Gradle ###
 .gradle
 work/
+__pycache__/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/**/build/

@@ -25,7 +25,7 @@ public record EquipmentRulesPayload(Map<ResourceLocation, ArmorConfig.Capacity> 
         PacketDistributor.sendToPlayer(player, new EquipmentRulesPayload(ArmorConfig.rules().equipment()));
     }
     public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("2").playToClient(TYPE, CODEC, (payload, context) ->
+        event.registrar("3").playToClient(TYPE, CODEC, (payload, context) ->
             context.enqueueWork(() -> EquipmentTooltipRules.accept(payload.equipment)));
     }
 }

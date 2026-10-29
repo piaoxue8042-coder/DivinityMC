@@ -6,5 +6,22 @@
   "hud.divinitymc.quarantined": "护甲数据异常，请联系管理员",
   "tooltip.divinitymc.physical": "+%s 物理护甲容量",
   "tooltip.divinitymc.magic": "+%s 魔法护甲容量",
-  "tooltip.divinitymc.syncing": "正在同步护甲容量…"
+  "tooltip.divinitymc.syncing": "正在同步护甲容量…",
+  "tooltip.divinitymc.independent": "独立护甲属性",
+  "command.divinitymc.equipment.hold": "请在主手持有一件可以穿戴的装备。",
+  "command.divinitymc.equipment.help": "物品独立属性（主手只持一件装备）：\n/divinitymc held — 查看数值及来源\n/divinitymc held set <物甲> <魔甲> — 仅修改手中这件装备\n/divinitymc held reset — 移除这件装备的独立属性\n类型配置：/divinitymc equipment <物品ID> set <物甲> <魔甲>，影响所有未设置独立属性的同类装备。",
+  "command.divinitymc.equipment.unsupported": "%s 不是支持的可穿戴装备。",
+  "command.divinitymc.equipment.failed": "修改未完成，请检查配置文件与服务器日志：%s",
+  "command.divinitymc.equipment.get": "%s：物理护甲容量 %s，魔法护甲容量 %s；来源：%s",
+  "command.divinitymc.equipment.set": "已保存 %s 的类型配置：物理护甲容量 %s，魔法护甲容量 %s（%s）。影响所有未设置独立属性的同类装备。",
+  "command.divinitymc.equipment.reset": "已移除 %s 的类型覆盖：物理护甲容量 %s，魔法护甲容量 %s；来源：%s。影响所有未设置独立属性的同类装备。",
+  "command.divinitymc.equipment.source.override": "类型配置",
+  "command.divinitymc.equipment.source.stack": "物品独立属性",
+  "command.divinitymc.held.split": "请先将主手装备分成单个，再修改或移除独立属性。",
+  "command.divinitymc.held.get": "%s（%s）：物理护甲容量 %s，魔法护甲容量 %s；来源：%s",
+  "command.divinitymc.held.set": "已设置这件 %s（%s）：物理护甲容量 %s，魔法护甲容量 %s；来源：%s。只影响此物品。",
+  "command.divinitymc.held.reset": "已移除这件 %s（%s）的独立属性：物理护甲容量 %s，魔法护甲容量 %s；来源：%s。类型配置未改变。",
+  "command.divinitymc.equipment.source.vanilla": "原版内置",
+  "command.divinitymc.equipment.source.automatic": "自动换算",
+  "command.divinitymc.equipment.source.unconfigured": "未配置"
 }

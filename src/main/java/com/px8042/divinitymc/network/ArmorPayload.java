@@ -28,7 +28,7 @@ public record ArmorPayload(int entityId, UUID uuid, ResourceLocation dimension,
         return new ArmorPayload(entity.getId(), entity.getUUID(), entity.level().dimension().location(), state.snapshot(), state.feedback);
     }
     public static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar("2").playToClient(TYPE, CODEC, (payload, context) -> context.enqueueWork(() -> {
+        event.registrar("3").playToClient(TYPE, CODEC, (payload, context) -> context.enqueueWork(() -> {
             var level = context.player().level();
             if (!level.dimension().location().equals(payload.dimension)) return;
             var entity = level.getEntity(payload.entityId);

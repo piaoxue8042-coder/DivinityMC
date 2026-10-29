@@ -46,20 +46,37 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 
 海龟壳（`minecraft:turtle_helmet`）的默认容量为 **12 物理护甲 / 0 魔法护甲**。金制头盔、胸甲、护腿、靴子分别提供 **2 / 4、5 / 10、3 / 6、1 / 2**，整套合计 **11 物理护甲 / 22 魔法护甲**。已有配置优先于默认值，可修改对应物品条目后执行 `/divinitymc reload` 生效。
 
-提示数值在登录时由服务器同步，成功执行 `/divinitymc reload` 后更新；无效更新保留旧值。未配置的可穿戴装备显示 0 / 0。客户端退出服务器会清除显示缓存，等待新服务器同步，避免串服。新增同步协议后客户端与服务器需要同时更新 JAR。
+提示数值在登录时由服务器同步，成功执行 `/divinitymc reload` 后更新；无效更新保留旧值。未识别且未配置的可穿戴装备显示 0 / 0。客户端退出服务器会清除显示缓存，等待新服务器同步，避免串服。客户端与服务器需要同时更新 JAR。
 
 服务器首次启动创建 `config/divinitymc.json`；开发运行时是 `run/config/divinitymc.json`。客户端不自行决定战斗规则。
 
-- `schemaVersion`：固定为 1。
+- `schemaVersion`：当前为 2，版本 1 的配置会在校验成功后自动迁移并备份。
 - `recoveryDelayTicks`：非负整数，默认 200。
 - `recoveryFractionPerSecond`：每秒恢复最大容量的比例，默认 0.1。
 - `naturalPhysicalMultiplier` / `naturalMagicMultiplier`：天然基础护甲转换倍率，默认 2 / 1。
-- `equipment`：`{"id":"minecraft:iron_chestplate","physical":12,"magic":6}` 形式的数组，每件物品只出现一次。
+- `autoEquipment`：`{"enabled":true,"physicalMultiplier":2,"magicMultiplier":1}`，控制其他模组标准防具的自动换算。倍率只影响自动识别的模组防具，原版内置数值不受它影响。
+- `equipmentOverrides`：单件装备覆盖，例如 `{"id":"minecraft:iron_chestplate","physical":12,"magic":6}`；默认空数组，每件物品只出现一次。显式填写 0 / 0 可以禁用该装备提供的双甲；删除覆盖后恢复内置或自动值。
 - `naturalArmor`：同样格式，ID 改为实体类型；配置的是该类型的天然容量，之后仍加装备容量。
 - `damageTypes`：`{"id":"minecraft:magic","kind":"MAGIC"}`，支持 `PHYSICAL` / `MAGIC` / `BYPASS`。
 - `controls`：同样格式，ID 是效果 ID 或 `divinitymc:knockback`；只支持 `PHYSICAL` / `MAGIC`。
 
-完整示例由当前游戏注册表生成，避免丢失原版盔甲条目。数值必须有限且非负，ID 必须存在，重复或冲突分类会拒绝整个更新。修改后用 `/divinitymc reload` 原子重载；失败保留上一份有效规则。首次启动配置无效时记录错误并使用默认值，不覆盖错误文件。
+数值必须有限且非负，重复或冲突分类会拒绝整个更新。装备覆盖可以预留未安装模组的物品 ID：服务器报告警告、暂不应用，并保留条目供重新安装后使用。已存在但不属于标准可装备物品的覆盖会报错；其他分类的 ID 仍须存在。修改后用 `/divinitymc reload` 原子重载；失败保留上一份有效规则。首次启动配置无效时记录错误并使用默认值，不覆盖错误文件。
+
+### 标准模组防具适配
+
+启动世界或重载规则时扫描物品注册表：其他模组继承 `ArmorItem` 的标准防具，默认按基础护甲值 × 2 / × 1 生成物甲 / 魔甲，不转换护甲韧性。装备必须处于自身对应的装备栏才提供容量。新增装备模组后重新启动即可识别，无需删除现有配置。
+
+优先级为 **单件覆盖 > 原版内置值／模组自动换算 > 0 / 0**。即使关闭 `autoEquipment.enabled`，显式装备覆盖也仍然生效。服务器结算和客户端说明共用解析后的容量表，不根据实体总护甲再次换算。
+
+例如，在 `equipmentOverrides` 数组内添加 `{"id":"examplemod:mage_robe","physical":4,"magic":20}`，即可覆盖这件标准可穿戴装备的容量。物品未安装时，该条目暂不生效。
+
+本阶段读取标准防具的基础防御值，不自动接管物品词条、充能状态、额外饰品栏、独立能量护盾或套装技能；这些机制需要专门接入。容量提供器只提供额外部分，避免与已自动识别的装备重复计数。模组的伤害类型仍按 `damageTypes` 配置，新增法术不会因为装备已适配而自动变为魔法伤害。
+
+### 旧配置迁移
+
+有效的版本 1 文件先备份为 `divinitymc.json.v1.bak`，再写入版本 2；已有备份不会被覆盖。原来的 `equipment` 条目全部保留为 `equipmentOverrides`，原版防具被省略的情况保留为显式 0 / 0，其余伤害、控制、天然护甲和恢复设置保留原值。原文件没有编辑来源标记，因此迁移不会猜测哪些数值是手动修改的。
+
+迁移后的旧条目会继续覆盖内置平衡值。如果希望某件装备随以后版本的默认平衡更新，删除它的覆盖条目即可。新配置默认没有装备覆盖，内置平衡可直接随模组更新；新增模组防具也会独立自动识别。无效旧配置不会被迁移、覆盖或生成迁移备份。
 
 控制扩展注册默认值可被同 ID 的配置覆盖。删除原版控制条目会停用相应免控；伤害条目缺省回落物理。
 
@@ -67,16 +84,45 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 
 需要权限等级 2（单人开启作弊或服务器管理员）。
 
+### 在游戏里修改装备容量
+
+将装备拿在**主手**，无需打开配置文件：
+
+```text
+/divinitymc held
+/divinitymc held set 4 20
+/divinitymc held reset
+```
+
+依次表示查询、设为 4 点物理护甲 / 20 点魔法护甲、删除单件覆盖并恢复内置或自动值。支持小数和 0 / 0；不会消耗或修改手中的物品堆。
+
+修改针对**整个物品类型**，会影响当前服务器所有同类装备，自动保存到 `equipmentOverrides`，重启后仍然生效。保存后立即更新已加载实体容量与客户端装备说明，无需再执行 `reload`；上限增加不补甲，降低则立即截断。其他装备覆盖与恢复、伤害、控制设置保持原值。
+
+也支持通过物品 ID 操作，服务器控制台可使用：
+
+```text
+/divinitymc equipment minecraft:golden_chestplate
+/divinitymc equipment minecraft:golden_chestplate set 5 15
+/divinitymc equipment minecraft:golden_chestplate reset
+```
+
+例如海龟壳恢复默认是 12 / 0，金胸甲是 5 / 10。`reset` 恢复当前版本内置值或当前自动换算结果，不是撤销到上一次手动编辑的数值。普通玩家不能执行编辑命令；空手、非装备、非法数值会被拒绝，磁盘配置无效时不会被命令覆盖。输入 `/divinitymc` 可查看简要帮助。
+
+### 战斗调试与规则重载
+
 ```text
 /divinitymc get @s
 /divinitymc set @s 3 0
 /divinitymc fill @s
 /divinitymc reset @s
 /divinitymc classify minecraft:magic
+/divinitymc equipment minecraft:golden_chestplate
 /divinitymc reload
 ```
 
 `set` 会限制在当前容量内；`fill` 不解除数据隔离；`reset` 是显式的隔离解除和满甲重新初始化。选择器可指定多个生物。破甲与免控在 HUD 短暂提示，不刷聊天。
+
+`held` 和 `equipment <物品ID>` 查询最终容量及来源：单件配置、原版内置、自动换算或未配置。单件编辑的提示支持中文及英文。
 
 ## 扩展 API
 

@@ -28,8 +28,7 @@ public final class ArmorService {
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             var stack = entity.getItemBySlot(slot);
             if (!stack.isEmpty() && stack.getItem() instanceof Equipable equipable && equipable.getEquipmentSlot() == slot) {
-                var extra = rules.equipment().get(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-                if (extra != null) capacity = capacity.plus(extra);
+                capacity = capacity.plus(EquipmentArmor.resolve(stack, rules.equipment()));
             }
         }
         capacity = capacity.plus(DivinityArmorApi.additionalCapacity(entity));

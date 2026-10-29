@@ -6,5 +6,22 @@
   "hud.divinitymc.quarantined": "Armor data invalid - contact an administrator",
   "tooltip.divinitymc.physical": "+%s Physical Armor Capacity",
   "tooltip.divinitymc.magic": "+%s Magic Armor Capacity",
-  "tooltip.divinitymc.syncing": "Syncing armor capacity…"
+  "tooltip.divinitymc.syncing": "Syncing armor capacity…",
+  "tooltip.divinitymc.independent": "Individual armor properties",
+  "command.divinitymc.equipment.hold": "Hold a supported wearable item in your main hand.",
+  "command.divinitymc.equipment.help": "Individual armor properties (hold one piece of equipment):\n/divinitymc held — view values and source\n/divinitymc held set <physical> <magic> — edit only the held item\n/divinitymc held reset — remove this item's override\nType configuration: /divinitymc equipment <item ID> set <physical> <magic>, affecting all items of that type without an individual override.",
+  "command.divinitymc.equipment.unsupported": "%s is not a supported wearable item.",
+  "command.divinitymc.equipment.failed": "Edit could not be completed. Check the configuration and server log: %s",
+  "command.divinitymc.equipment.get": "%s: Physical Armor Capacity %s, Magic Armor Capacity %s; source: %s",
+  "command.divinitymc.equipment.set": "Saved type configuration for %s: Physical Armor Capacity %s, Magic Armor Capacity %s (%s). Affects all items of this type without an individual override.",
+  "command.divinitymc.equipment.reset": "Removed type override for %s: Physical Armor Capacity %s, Magic Armor Capacity %s; source: %s. Affects all items of this type without an individual override.",
+  "command.divinitymc.equipment.source.override": "type configuration",
+  "command.divinitymc.equipment.source.stack": "individual item override",
+  "command.divinitymc.held.split": "Split the held stack into a single item before editing or resetting its properties.",
+  "command.divinitymc.held.get": "%s (%s): Physical Armor Capacity %s, Magic Armor Capacity %s; source: %s",
+  "command.divinitymc.held.set": "Updated this %s (%s): Physical Armor Capacity %s, Magic Armor Capacity %s; source: %s. Only this item is affected.",
+  "command.divinitymc.held.reset": "Removed the individual override from this %s (%s): Physical Armor Capacity %s, Magic Armor Capacity %s; source: %s. Type configuration is unchanged.",
+  "command.divinitymc.equipment.source.vanilla": "built-in vanilla rule",
+  "command.divinitymc.equipment.source.automatic": "automatic conversion",
+  "command.divinitymc.equipment.source.unconfigured": "unconfigured"
 }

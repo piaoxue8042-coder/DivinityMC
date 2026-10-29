@@ -1,6 +1,7 @@
 package com.px8042.divinitymc.client;
 
 import com.px8042.divinitymc.config.ArmorConfig;
+import com.px8042.divinitymc.armor.EquipmentArmor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -54,11 +55,13 @@ public final class ArmorTooltips {
             lines.add(index++, Component.translatable(header).withStyle(ChatFormatting.GRAY));
             if (index < lines.size()) lines.add(index, Component.empty());
         }
-        if (equipment == null) {
+        var capacity = EquipmentArmor.resolve(stack, equipment);
+        if (capacity == null) {
             lines.add(index, Component.translatable("tooltip.divinitymc.syncing").withStyle(ChatFormatting.GRAY));
             return;
         }
-        var capacity = equipment.getOrDefault(BuiltInRegistries.ITEM.getKey(stack.getItem()), new ArmorConfig.Capacity(0, 0));
+        if (stack.has(EquipmentArmor.OVERRIDE.get()))
+            lines.add(index++, Component.translatable("tooltip.divinitymc.independent").withStyle(ChatFormatting.LIGHT_PURPLE));
         lines.add(index++, Component.translatable("tooltip.divinitymc.physical", number(capacity.physical())).withColor(0xCE9B55));
         lines.add(index, Component.translatable("tooltip.divinitymc.magic", number(capacity.magic())).withColor(0x648FE8));
     }

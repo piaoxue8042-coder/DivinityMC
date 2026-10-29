@@ -16,5 +16,7 @@ JSON.stringify({
     serverEquipmentEntries: Rules.equipment().size(),
     ironChestplate: tooltip(Items.IRON_CHESTPLATE),
     netheriteChestplate: tooltip(Items.NETHERITE_CHESTPLATE),
-    diamondSword: tooltip(Items.DIAMOND_SWORD)
+    diamondSword: tooltip(Items.DIAMOND_SWORD),
+    turtleHelmet: tooltip(Items.TURTLE_HELMET),
+    goldenChestplate: tooltip(Items.GOLDEN_CHESTPLATE)
 });

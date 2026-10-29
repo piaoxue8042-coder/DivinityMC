@@ -19,6 +19,7 @@ public final class DivinityMC {
     public static final Logger LOGGER = LogUtils.getLogger();
     public DivinityMC(IEventBus modBus) {
         ArmorAttachments.TYPES.register(modBus);
+        com.px8042.divinitymc.armor.EquipmentArmor.TYPES.register(modBus);
         modBus.addListener(ArmorPayload::register);
         modBus.addListener(EquipmentRulesPayload::register);
         NeoForge.EVENT_BUS.addListener(ArmorTooltips::onTooltip);
