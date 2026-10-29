@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.px8042.divinitymc.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["AbstractArrowMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

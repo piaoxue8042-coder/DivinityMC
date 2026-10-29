@@ -1,0 +1,10 @@
+{
+  "hud.divinitymc.physical": "物理护甲",
+  "hud.divinitymc.magic": "魔法护甲",
+  "hud.divinitymc.broken": "护甲破碎",
+  "hud.divinitymc.blocked": "控制免疫",
+  "hud.divinitymc.quarantined": "护甲数据异常，请联系管理员",
+  "tooltip.divinitymc.physical": "+%s 物理护甲容量",
+  "tooltip.divinitymc.magic": "+%s 魔法护甲容量",
+  "tooltip.divinitymc.syncing": "正在同步护甲容量…"
+}

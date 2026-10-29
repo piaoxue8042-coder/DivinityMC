@@ -1,0 +1,10 @@
+{
+  "hud.divinitymc.physical": "Physical Armor",
+  "hud.divinitymc.magic": "Magic Armor",
+  "hud.divinitymc.broken": "Armor broken",
+  "hud.divinitymc.blocked": "Control blocked",
+  "hud.divinitymc.quarantined": "Armor data invalid - contact an administrator",
+  "tooltip.divinitymc.physical": "+%s Physical Armor Capacity",
+  "tooltip.divinitymc.magic": "+%s Magic Armor Capacity",
+  "tooltip.divinitymc.syncing": "Syncing armor capacity…"
+}
