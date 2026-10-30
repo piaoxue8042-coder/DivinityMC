@@ -70,6 +70,7 @@ neoForge {
 
         server {
             server()
+            gameDirectory = project.file('run-server')
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
@@ -79,6 +80,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
+            systemProperty 'divinitymc.testFixtures', 'true'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -94,7 +96,7 @@ neoForge {
         // applies to all the run configs above
         configureEach {
             // Keep the dev endpoint separate from the launcher's default port 25585.
-            systemProperty 'autojs.port', project.autojs_port
+            systemProperty 'autojs.port', name == 'server' ? project.autojs_server_port : project.autojs_port
 
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.

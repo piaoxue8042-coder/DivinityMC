@@ -13,6 +13,8 @@ public final class TestEquipment {
     public static final ResourceLocation CHEST = ResourceLocation.parse("divinitymc_test:standard_chestplate");
     @SubscribeEvent
     public static void register(RegisterEvent event) {
+        // Normal dev clients/servers must have the same registry as the released jar.
+        if (!Boolean.getBoolean("divinitymc.testFixtures")) return;
         event.register(Registries.ITEM, CHEST,
             () -> new ArmorItem(ArmorMaterials.DIAMOND, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     }

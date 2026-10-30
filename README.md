@@ -19,6 +19,18 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 
 `build` 包含纯护甲状态单元测试。`runGameTestServer` 在开发运行目录运行无界面 Minecraft 集成测试，不需要打开现有玩家存档。GameTest 类与场景不进入发布 JAR。
 
+### 使用工程专用服务器联机
+
+普通 `runClient` 和 `runServer` 不注册自动测试胸甲，可与同版本发布 JAR 联机；`runGameTestServer` 会单独启用测试物品。以前含测试胸甲的开发存档可能提示缺失测试物品，联机验证请使用新测试世界。
+
+在工程目录使用 Java 21 执行 `.\gradlew.bat runServer`。服务端文件、配置和世界放在独立的 `run-server/`，不与开发客户端的 `run/` 混用，也无需往服务端目录再放一份 DivinityMC JAR。
+
+当前开发运行环境首次启动会直接生成配置和测试世界，未生成 `eula.txt`，实际运行使用离线模式。它与独立安装的发行服务器首次启动流程不同，不应照搬开发设置用于公开服务器。进行本机测试时，将 `run-server/server.properties` 的 `server-ip` 设为 `127.0.0.1`；本次测试实例已如此设置。
+
+日志出现 `Done` 后，两个启动器客户端使用不同玩家名连接 `127.0.0.1:25565`；保持服务端进程运行，结束时输入 `stop` 正常保存。以后验证独立安装的发行服务器时，再按其实际生成的 EULA 和登录验证配置完成安装。
+
+服务端 AutoJS 默认监听本机 **25587**，游戏端口仍为 **25565**。启动器客户端默认 AutoJS 端口为 25585，两者不冲突。
+
 ## 规则
 
 - 物理伤害先扣物甲，魔法伤害先扣魔甲，超出部分进入吸收生命／生命结算；生存穿透伤害直接进入吸收生命／生命结算。
@@ -32,7 +44,7 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 
 ## 容量与恢复
 
-初始配置为原版盔甲的护甲值 ×2 物甲、×1 魔甲。天然护甲只取实体护甲属性的基础值，不重复计算装备或附加属性修饰符。实体类型配置可覆盖天然容量。装备只能在自身对应装备槽提供容量，放在背包或拿在手上不生效。未配置的模组盔甲默认不给容量。
+初始配置为原版盔甲的护甲值 ×2 物甲、×1 魔甲（金套与海龟壳例外，见下文）。天然护甲只取实体护甲属性的基础值，不重复计算装备或附加属性修饰符。实体类型配置可覆盖天然容量。装备只能在自身对应装备槽提供容量，放在背包或拿在手上不生效。标准模组盔甲默认自动换算；未识别且未配置的装备不给容量。
 
 装备升档不补当前甲；降档和破损立即截断。首次初始化和死亡重生按当时容量满甲。重登、区块卸载、跨维度（包括末地返回）保留当前甲与剩余等待时间。
 
@@ -46,7 +58,7 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 
 海龟壳（`minecraft:turtle_helmet`）的默认容量为 **12 物理护甲 / 0 魔法护甲**。金制头盔、胸甲、护腿、靴子分别提供 **2 / 4、5 / 10、3 / 6、1 / 2**，整套合计 **11 物理护甲 / 22 魔法护甲**。已有配置优先于默认值，可修改对应物品条目后执行 `/divinitymc reload` 生效。
 
-提示数值在登录时由服务器同步，成功执行 `/divinitymc reload` 后更新；无效更新保留旧值。未识别且未配置的可穿戴装备显示 0 / 0。客户端退出服务器会清除显示缓存，等待新服务器同步，避免串服。客户端与服务器需要同时更新 JAR。
+类型配置在登录时由服务器同步，成功执行 `/divinitymc reload` 后更新；无效更新保留旧值。物品独立属性随原版物品数据同步，悬停说明会标注“独立护甲属性”。未识别且未配置的可穿戴装备显示 0 / 0。客户端退出服务器会清除显示缓存，等待新服务器同步，避免串服。本版通讯协议为 **3**，客户端与服务器需要同时更新 JAR。
 
 服务器首次启动创建 `config/divinitymc.json`；开发运行时是 `run/config/divinitymc.json`。客户端不自行决定战斗规则。
 
@@ -55,7 +67,7 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 - `recoveryFractionPerSecond`：每秒恢复最大容量的比例，默认 0.1。
 - `naturalPhysicalMultiplier` / `naturalMagicMultiplier`：天然基础护甲转换倍率，默认 2 / 1。
 - `autoEquipment`：`{"enabled":true,"physicalMultiplier":2,"magicMultiplier":1}`，控制其他模组标准防具的自动换算。倍率只影响自动识别的模组防具，原版内置数值不受它影响。
-- `equipmentOverrides`：单件装备覆盖，例如 `{"id":"minecraft:iron_chestplate","physical":12,"magic":6}`；默认空数组，每件物品只出现一次。显式填写 0 / 0 可以禁用该装备提供的双甲；删除覆盖后恢复内置或自动值。
+- `equipmentOverrides`：装备类型配置，例如 `{"id":"minecraft:iron_chestplate","physical":12,"magic":6}`；默认空数组，每个物品 ID 只出现一次。影响所有没有物品独立属性的同类装备；显式填写 0 / 0 可以禁用该类型默认提供的双甲，删除条目后恢复内置或自动值。
 - `naturalArmor`：同样格式，ID 改为实体类型；配置的是该类型的天然容量，之后仍加装备容量。
 - `damageTypes`：`{"id":"minecraft:magic","kind":"MAGIC"}`，支持 `PHYSICAL` / `MAGIC` / `BYPASS`。
 - `controls`：同样格式，ID 是效果 ID 或 `divinitymc:knockback`；只支持 `PHYSICAL` / `MAGIC`。
@@ -66,9 +78,9 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 
 启动世界或重载规则时扫描物品注册表：其他模组继承 `ArmorItem` 的标准防具，默认按基础护甲值 × 2 / × 1 生成物甲 / 魔甲，不转换护甲韧性。装备必须处于自身对应的装备栏才提供容量。新增装备模组后重新启动即可识别，无需删除现有配置。
 
-优先级为 **单件覆盖 > 原版内置值／模组自动换算 > 0 / 0**。即使关闭 `autoEquipment.enabled`，显式装备覆盖也仍然生效。服务器结算和客户端说明共用解析后的容量表，不根据实体总护甲再次换算。
+优先级为 **物品独立属性 > 类型配置 > 原版内置值／模组自动换算 > 0 / 0**。任一层显式的 0 / 0 都会覆盖后续默认值。即使关闭 `autoEquipment.enabled`，独立属性和类型配置也仍然生效。穿戴结算、客户端说明与手持查询共用逐物品解析逻辑，不根据实体总护甲再次换算。
 
-例如，在 `equipmentOverrides` 数组内添加 `{"id":"examplemod:mage_robe","physical":4,"magic":20}`，即可覆盖这件标准可穿戴装备的容量。物品未安装时，该条目暂不生效。
+例如，在 `equipmentOverrides` 数组内添加 `{"id":"examplemod:mage_robe","physical":4,"magic":20}`，即可修改该类型标准可穿戴装备的默认容量。物品未安装时，该条目暂不生效。
 
 本阶段读取标准防具的基础防御值，不自动接管物品词条、充能状态、额外饰品栏、独立能量护盾或套装技能；这些机制需要专门接入。容量提供器只提供额外部分，避免与已自动识别的装备重复计数。模组的伤害类型仍按 `damageTypes` 配置，新增法术不会因为装备已适配而自动变为魔法伤害。
 
@@ -94,11 +106,11 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 /divinitymc held reset
 ```
 
-依次表示查询、设为 4 点物理护甲 / 20 点魔法护甲、删除单件覆盖并恢复内置或自动值。支持小数和 0 / 0；不会消耗或修改手中的物品堆。
+依次表示查询、将主手这一件装备设为 4 点物理护甲 / 20 点魔法护甲、移除这一件的独立属性并回退到该类型当前配置或默认值。支持小数和 0 / 0；设置和重置要求主手数量为 1，堆叠的可穿戴物品须先拆分。查询显示最终容量及来源。
 
-修改针对**整个物品类型**，会影响当前服务器所有同类装备，自动保存到 `equipmentOverrides`，重启后仍然生效。保存后立即更新已加载实体容量与客户端装备说明，无需再执行 `reload`；上限增加不补甲，降低则立即截断。其他装备覆盖与恢复、伤害、控制设置保持原值。
+`held` 只修改**手中的这一件装备**，不写配置文件。属性保存在物品数据组件 `divinitymc:armor_capacity_override` 中，不要求改名，同名物品也相互独立。名称、附魔、耐久等数据保留；属性随保存读取、改名、铁砧材料修复、丢出拾取和容器转移保留。复制物品会复制属性，之后修改任意副本不影响另一件。合成和升级遵循各配方的组件继承规则，本模组不额外增加通用继承机制。
 
-也支持通过物品 ID 操作，服务器控制台可使用：
+修改**整个装备类型**时使用以下命令，服务器控制台也可使用：
 
 ```text
 /divinitymc equipment minecraft:golden_chestplate
@@ -106,7 +118,9 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 /divinitymc equipment minecraft:golden_chestplate reset
 ```
 
-例如海龟壳恢复默认是 12 / 0，金胸甲是 5 / 10。`reset` 恢复当前版本内置值或当前自动换算结果，不是撤销到上一次手动编辑的数值。普通玩家不能执行编辑命令；空手、非装备、非法数值会被拒绝，磁盘配置无效时不会被命令覆盖。输入 `/divinitymc` 可查看简要帮助。
+`equipment <物品ID> set/reset` 写入或删除 `equipmentOverrides` 中的类型配置，影响所有没有独立属性的同类装备，重启后仍然生效。类型 `reset` 恢复当前版本内置值或当前自动换算结果，例如海龟壳 12 / 0、金胸甲 5 / 10；它不会移除物品独立属性，也不是撤销上一次编辑。
+
+两种编辑都会立即同步相关数据，无需执行 `reload`；穿戴后仍遵守上限增加不补甲、降低立即截断。普通玩家不能执行这些命令；手持编辑遇到空手、非装备或非法数值会被拒绝。类型编辑遇到损坏的配置文件会拒绝覆盖；手持编辑不依赖磁盘配置。输入 `/divinitymc` 可查看简要帮助。
 
 ### 战斗调试与规则重载
 
@@ -122,7 +136,7 @@ $env:JAVA_HOME = 'E:\jdk-21.0.9_windows-x64_bin\jdk-21.0.9'
 
 `set` 会限制在当前容量内；`fill` 不解除数据隔离；`reset` 是显式的隔离解除和满甲重新初始化。选择器可指定多个生物。破甲与免控在 HUD 短暂提示，不刷聊天。
 
-`held` 和 `equipment <物品ID>` 查询最终容量及来源：单件配置、原版内置、自动换算或未配置。单件编辑的提示支持中文及英文。
+`held` 查询这件物品的最终容量及来源：物品独立属性、类型配置、原版内置、自动换算或未配置。`equipment <物品ID>` 查询该类型的容量和来源，不读取主手独立属性。说明和编辑反馈支持中文及英文。
 
 ## 扩展 API
 
@@ -153,7 +167,7 @@ DivinityArmorApi.tryControl(target, caster, ResourceLocation.parse("yourmod:stun
 
 Gradle 从 AutoJS 作者的 Maven 仓库及 Latvian Maven 仓库加载 AutoJS 1.0.0 和 Rhino 2101.2.8-build.91。它们只在 `localRuntime` 中使用，不打包进 DivinityMC，也不成为发布依赖；不需要 KubeJS。
 
-重新加载 Gradle 工程后，`runClient` / `runServer` 会自动带上调试工具，无需向 `run/mods` 再复制同名 JAR。开发实例使用端口 **25586**，与启动器实例默认的 25585 区分。
+重新加载 Gradle 工程后，`runClient` / `runServer` 会自动带上调试工具，无需再复制同名 JAR。开发客户端和自动测试使用端口 **25586**，专用开发服务器使用 **25587**，与启动器实例默认的 25585 区分。
 
 ```powershell
 .\gradlew.bat runClient
@@ -161,7 +175,7 @@ python scripts/autojs/call.py --port 25586 --status
 python scripts/autojs/call.py --port 25586 --side client --file scripts/autojs/client-info.js
 ```
 
-可用 `-Pautojs_enabled=false` 临时关闭调试依赖，或用 `-Pautojs_port=25587` 为另一个开发实例指定端口；版本和默认开关在 `gradle.properties` 中配置。AutoJS 脚本能修改运行中的游戏状态，使用专门的测试世界。
+可用 `-Pautojs_enabled=false` 临时关闭调试依赖；`-Pautojs_port=25588` 可修改开发客户端／自动测试端口，`-Pautojs_server_port=25589` 可修改专用开发服务器端口。版本和默认开关在 `gradle.properties` 中配置。AutoJS 脚本能修改运行中的游戏状态，使用专门的测试世界。
 
 ## 验证边界
 
