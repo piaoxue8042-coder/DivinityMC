@@ -22,8 +22,9 @@ public final class DivinityMC {
         com.px8042.divinitymc.armor.EquipmentArmor.TYPES.register(modBus);
         modBus.addListener(ArmorPayload::register);
         modBus.addListener(EquipmentRulesPayload::register);
-        NeoForge.EVENT_BUS.addListener(ArmorTooltips::onTooltip);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST, ArmorTooltips::onTooltip);
         NeoForge.EVENT_BUS.register(ArmorEvents.class);
+        com.px8042.divinitymc.compat.CuriosIntegration.register();
         NeoForge.EVENT_BUS.addListener(ArmorCommands::register);
         NeoForge.EVENT_BUS.addListener(ArmorConfig::onServerStarting);
     }

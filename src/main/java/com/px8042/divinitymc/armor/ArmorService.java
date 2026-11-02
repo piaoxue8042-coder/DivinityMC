@@ -27,10 +27,13 @@ public final class ArmorService {
         }
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             var stack = entity.getItemBySlot(slot);
-            if (!stack.isEmpty() && stack.getItem() instanceof Equipable equipable && equipable.getEquipmentSlot() == slot) {
-                capacity = capacity.plus(EquipmentArmor.resolve(stack, rules.equipment()));
+            if (stack.isEmpty()) continue;
+            var equipable = Equipable.get(stack);
+            if (equipable != null && equipable.getEquipmentSlot() == slot) {
+                capacity = capacity.plus(EquipmentArmor.worn(stack, slot, rules));
             }
         }
+        capacity = capacity.plus(com.px8042.divinitymc.compat.CuriosIntegration.capacity(entity, rules));
         capacity = capacity.plus(DivinityArmorApi.additionalCapacity(entity));
         state.capacity(capacity.physical(), capacity.magic());
     }

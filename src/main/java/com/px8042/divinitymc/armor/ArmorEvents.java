@@ -4,10 +4,15 @@ import com.px8042.divinitymc.api.*;
 import com.px8042.divinitymc.config.ArmorConfig;
 import com.px8042.divinitymc.network.EquipmentRulesPayload;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.*;
@@ -30,13 +35,32 @@ public final class ArmorEvents {
         if (entity.level().isClientSide || amount <= 0) return;
         ArmorService.combat(entity, event.getSource().getEntity());
         var state = ArmorService.state(entity);
-        float overflow = (float)state.absorb(DivinityArmorApi.damageKind(event.getSource()), amount);
+        var source = event.getSource();
+        var kind = DivinityArmorApi.damageKind(source);
+        float overflow = (float)state.absorb(kind, amount);
+        if (kind == ArmorKind.PHYSICAL && state.blocks(kind)) {
+            applyMaceBreach(state, source, amount);
+        }
         event.setNewDamage(overflow);
         // Vanilla only emits this game event / records combat on health loss.
         // Keep zero-health-loss armor hits visible to combat tracking and vibration listeners.
         if (overflow == 0 && amount > 0) {
             entity.getCombatTracker().recordDamage(event.getSource(), 0);
             entity.gameEvent(GameEvent.ENTITY_DAMAGE);
+        }
+    }
+    private static void applyMaceBreach(ArmorState state, DamageSource source, float damage) {
+        if (!source.isDirect() || !(source.getDirectEntity() instanceof LivingEntity attacker)) return;
+        if (!source.is(DamageTypes.PLAYER_ATTACK) && !source.is(DamageTypes.MOB_ATTACK)
+                && !source.is(DamageTypes.MOB_ATTACK_NO_AGGRO)) return;
+        var weapon = source.getWeaponItem();
+        if (weapon == null || !weapon.is(Items.MACE)) return;
+        var breach = attacker.registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.BREACH);
+        int level = weapon.getEnchantmentLevel(breach);
+        if (level > 0) {
+            // Only the original hit can overflow into health. Discard any excess armor wear.
+            double extra = (double) damage * level * 15 / 100;
+            state.absorb(ArmorKind.PHYSICAL, Math.min(state.current(ArmorKind.PHYSICAL), extra));
         }
     }
     @SubscribeEvent(priority = EventPriority.LOWEST)

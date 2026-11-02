@@ -65,7 +65,7 @@ public final class ArmorCommands {
         var source = c.getSource();
         var item = ItemArgument.getItem(c, "item").getItem();
         var id = BuiltInRegistries.ITEM.getKey(item);
-        if (!operation.equals("get") && !(item instanceof Equipable)) {
+        if (!operation.equals("get") && !EquipmentArmor.supports(item.getDefaultInstance(), false)) {
             source.sendFailure(Component.translatable("command.divinitymc.equipment.unsupported", id.toString())); return 0;
         }
         if (!operation.equals("get")) {
@@ -78,8 +78,9 @@ public final class ArmorCommands {
             }
         }
         var rules = ArmorConfig.rules();
-        var capacity = rules.equipment().getOrDefault(id, new ArmorConfig.Capacity(0, 0));
-        var origin = Component.translatable("command.divinitymc.equipment.source." + rules.equipmentSource(id));
+        var capacity = EquipmentArmor.resolve(item.getDefaultInstance(), rules.equipment(), rules.autoEquipment(),
+            source.getEntity() instanceof LivingEntity living ? living : null);
+        var origin = Component.translatable("command.divinitymc.equipment.source." + EquipmentArmor.source(item.getDefaultInstance(), rules));
         source.sendSuccess(() -> Component.translatable("command.divinitymc.equipment." + operation,
             id.toString(), number(capacity.physical()), number(capacity.magic()), origin), !operation.equals("get"));
         return 1;
@@ -88,7 +89,7 @@ public final class ArmorCommands {
         var source = c.getSource();
         var player = source.getPlayerOrException();
         var stack = player.getMainHandItem();
-        if (stack.isEmpty() || !(stack.getItem() instanceof Equipable)) {
+        if (stack.isEmpty() || !EquipmentArmor.supports(stack, false)) {
             source.sendFailure(Component.translatable("command.divinitymc.equipment.hold")); return 0;
         }
         if (!operation.equals("get")) {
@@ -104,7 +105,7 @@ public final class ArmorCommands {
             ArmorService.sync(player);
         }
         var rules = ArmorConfig.rules();
-        var capacity = EquipmentArmor.resolve(stack, rules.equipment());
+        var capacity = EquipmentArmor.resolve(stack, rules.equipment(), rules.autoEquipment(), player);
         var origin = Component.translatable("command.divinitymc.equipment.source." + EquipmentArmor.source(stack, rules));
         source.sendSuccess(() -> Component.translatable("command.divinitymc.held." + operation,
             stack.getHoverName(), BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(),

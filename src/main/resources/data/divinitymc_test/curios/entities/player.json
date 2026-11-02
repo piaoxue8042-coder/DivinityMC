@@ -1,0 +1,5 @@
+{
+  "neoforge:conditions": [{"type": "neoforge:item_exists", "item": "divinitymc_test:armor_ring"}],
+  "entities": ["minecraft:player"],
+  "slots": ["curio"]
+}

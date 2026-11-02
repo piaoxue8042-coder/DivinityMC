@@ -45,7 +45,8 @@ public final class ItemArmorGameTests {
         finally { buf.release(); }
         var copy = loaded.copy(); loaded.set(EquipmentArmor.OVERRIDE.get(), new ArmorConfig.Capacity(0, 0));
         check(h, copy);
-        h.assertTrue(EquipmentArmor.resolve(loaded, ArmorConfig.rules().equipment()).physical() == 0, "zero overrides type value");
+        var rules = ArmorConfig.rules();
+        h.assertTrue(EquipmentArmor.resolve(loaded, rules.equipment(), rules.autoEquipment(), null).physical() == 0, "zero overrides type value");
         h.succeed();
     }
     @GameTest(template = "test_empty")

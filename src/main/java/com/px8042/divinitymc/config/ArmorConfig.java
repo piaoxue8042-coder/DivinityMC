@@ -93,8 +93,8 @@ public final class ArmorConfig {
             if (!BuiltInRegistries.ITEM.containsKey(id)) {
                 // Keep optional-mod overrides on disk so removing/reinstalling a mod does not erase user choices.
                 DivinityMC.LOGGER.warn("Equipment override {} is inactive: item is not installed", id);
-            } else if (!(BuiltInRegistries.ITEM.get(id) instanceof Equipable)) {
-                throw new IllegalArgumentException("Equipment override is not a standard equippable item: " + id);
+            } else if (!com.px8042.divinitymc.armor.EquipmentArmor.supports(BuiltInRegistries.ITEM.get(id).getDefaultInstance(), false)) {
+                throw new IllegalArgumentException("Equipment override is not a supported armor or Curios item: " + id);
             }
         }
         for (var id : candidate.natural.keySet())
@@ -115,8 +115,8 @@ public final class ArmorConfig {
     /** A null capacity removes this item's override. Never overwrite an invalid on-disk configuration. */
     public static Capacity editEquipment(MinecraftServer server, ResourceLocation id, Capacity capacity) throws IOException {
         if (!server.isSameThread()) throw new IllegalStateException("Equipment configuration changes require the server thread");
-        if (!BuiltInRegistries.ITEM.containsKey(id) || !(BuiltInRegistries.ITEM.get(id) instanceof Equipable))
-            throw new IllegalArgumentException("Not a standard equippable item: " + id);
+        if (!BuiltInRegistries.ITEM.containsKey(id) || !com.px8042.divinitymc.armor.EquipmentArmor.supports(BuiltInRegistries.ITEM.get(id).getDefaultInstance(), false))
+            throw new IllegalArgumentException("Not a supported armor or Curios item: " + id);
         Path path = path();
         boolean exists = Files.exists(path);
         JsonObject root = exists ? JsonParser.parseString(Files.readString(path, StandardCharsets.UTF_8)).getAsJsonObject() : defaultJson();
@@ -136,7 +136,8 @@ public final class ArmorConfig {
         if (legacy) backupLegacy(path);
         writeAtomically(path, root);
         publish(server, candidate);
-        return candidate.equipment().getOrDefault(id, new Capacity(0, 0));
+        return com.px8042.divinitymc.armor.EquipmentArmor.resolve(BuiltInRegistries.ITEM.get(id).getDefaultInstance(),
+            candidate.equipment(), candidate.autoEquipment(), null);
     }
     public static Rules parse(JsonObject root) {
         if (integer(root, "schemaVersion") == 1) root = migrateV1(root);
@@ -153,7 +154,7 @@ public final class ArmorConfig {
         var overrides = capacities(root.getAsJsonArray("equipmentOverrides"));
         return new Rules(integer(root, "recoveryDelayTicks"), number(root, "recoveryFractionPerSecond"),
             number(root, "naturalPhysicalMultiplier"), number(root, "naturalMagicMultiplier"),
-            settings, overrides, EquipmentDefaults.resolve(settings, overrides), capacities(root.getAsJsonArray("naturalArmor")),
+            settings, overrides, EquipmentDefaults.resolve(overrides), capacities(root.getAsJsonArray("naturalArmor")),
             kinds(root.getAsJsonArray("damageTypes"), true), kinds(root.getAsJsonArray("controls"), false));
     }
     public static JsonObject migrateV1(JsonObject old) {

@@ -15,6 +15,7 @@ public final class TestEquipment {
     public static void register(RegisterEvent event) {
         // Normal dev clients/servers must have the same registry as the released jar.
         if (!Boolean.getBoolean("divinitymc.testFixtures")) return;
+        if (net.neoforged.fml.ModList.get().isLoaded("curios")) CuriosFixtures.register(event);
         event.register(Registries.ITEM, CHEST,
             () -> new ArmorItem(ArmorMaterials.DIAMOND, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     }

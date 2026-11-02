@@ -1,6 +1,7 @@
 package com.px8042.divinitymc.client;
 
 import com.px8042.divinitymc.config.ArmorConfig;
+import com.px8042.divinitymc.config.EquipmentDefaults;
 import com.px8042.divinitymc.armor.EquipmentArmor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
@@ -10,6 +11,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Equipable;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
@@ -22,10 +24,16 @@ public final class ArmorTooltips {
         var player = event.getEntity();
         var equipment = player != null && !player.level().isClientSide
             ? ArmorConfig.rules().equipment() : EquipmentTooltipRules.equipment();
-        update(event.getItemStack(), event.getToolTip(), equipment);
+        var automatic = player != null && !player.level().isClientSide
+            ? ArmorConfig.rules().autoEquipment() : EquipmentTooltipRules.automatic();
+        update(event.getItemStack(), event.getToolTip(), equipment, automatic, player);
     }
 
     public static void update(ItemStack stack, List<Component> lines, Map<ResourceLocation, ArmorConfig.Capacity> equipment) {
+        update(stack, lines, equipment, new EquipmentDefaults.Automatic(false, 0, 0), null);
+    }
+    public static void update(ItemStack stack, List<Component> lines, Map<ResourceLocation, ArmorConfig.Capacity> equipment,
+            EquipmentDefaults.Automatic automatic, LivingEntity wearer) {
         // Inspect translation components, never localized text or modifier IDs: netherite armor
         // shares modifier IDs with knockback resistance, whose tooltip must remain visible.
         lines.removeIf(line -> containsKey(line, Attributes.ARMOR.value().getDescriptionId())
@@ -38,10 +46,12 @@ public final class ArmorTooltips {
                 if (i > 0 && lines.get(i - 1).getString().isEmpty()) lines.remove(--i);
             }
         }
-        if (!(stack.getItem() instanceof Equipable equipable)
+        if (!EquipmentArmor.supports(stack, wearer != null && wearer.level().isClientSide)
             || !stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).showInTooltip()) return;
 
-        String header = "item.modifiers." + equipable.getEquipmentSlot().getName();
+        var equipable = Equipable.get(stack);
+        String header = equipable != null
+            ? "item.modifiers." + equipable.getEquipmentSlot().getName() : "tooltip.divinitymc.curios.header";
         int index = -1;
         for (int i = 0; i < lines.size(); i++) {
             if (lines.get(i).getContents() instanceof TranslatableContents text && text.getKey().equals(header)) {
@@ -55,7 +65,8 @@ public final class ArmorTooltips {
             lines.add(index++, Component.translatable(header).withStyle(ChatFormatting.GRAY));
             if (index < lines.size()) lines.add(index, Component.empty());
         }
-        var capacity = EquipmentArmor.resolve(stack, equipment);
+        var capacity = EquipmentArmor.resolve(stack, equipment,
+            automatic == null ? new EquipmentDefaults.Automatic(false, 0, 0) : automatic, wearer);
         if (capacity == null) {
             lines.add(index, Component.translatable("tooltip.divinitymc.syncing").withStyle(ChatFormatting.GRAY));
             return;

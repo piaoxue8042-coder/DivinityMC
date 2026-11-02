@@ -29,6 +29,11 @@ sourceSets.main.resources {
 repositories {
     mavenCentral()
     maven {
+        name = 'Curios'
+        url = 'https://maven.theillusivec4.top/'
+        content { includeGroup 'top.theillusivec4.curios' }
+    }
+    maven {
         name = 'AutoJS'
         url = 'https://maven.sighs.cc/repository/maven-releases/'
         content { includeGroup 'com.sighs.autojs' }
@@ -131,6 +136,11 @@ configurations {
 }
 
 dependencies {
+    // Optional integration; never bundled into the published mod.
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+    if (providers.gradleProperty('curios_enabled').get().toBoolean()) {
+        localRuntime "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+    }
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     // Development tools only: excluded from the published dependency metadata and mod jar.
@@ -209,6 +219,7 @@ tasks.named('test', Test) { useJUnitPlatform() }
 // GameTest fixtures are available in development runs, never in the distributed mod.
 tasks.named('jar', Jar) {
     exclude 'com/px8042/divinitymc/gametest/**'
+    exclude 'data/divinitymc_test/**'
     exclude 'data/divinitymc/structure/test_empty.nbt'
 }
 

@@ -73,6 +73,51 @@ public final class ArmorGameTests {
         h.succeed();
     }
     @GameTest(template = "test_empty")
+    public static void maceBreachBreaksArmorBeforeKnockbackWithoutExtraOverflow(GameTestHelper h) {
+        var player = h.makeMockPlayer(GameType.SURVIVAL);
+        player.setPos(h.absoluteVec(new Vec3(4, 2, 2)));
+        var mace = new ItemStack(Items.MACE);
+        player.setItemSlot(EquipmentSlot.MAINHAND, mace);
+        var source = player.damageSources().playerAttack(player);
+        var target = armored(h);
+        DivinityArmorApi.set(target, ArmorKind.PHYSICAL, 10);
+        target.hurt(source, 8);
+        eq(h, DivinityArmorApi.armor(target).physical(), 2, "plain mace");
+        eq(h, target.getDeltaMovement().lengthSqr(), 0, "plain hit cannot knock back");
+
+        mace.enchant(player.registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.BREACH), 2);
+        target.invulnerableTime = 0;
+        DivinityArmorApi.set(target, ArmorKind.PHYSICAL, 10);
+        target.hurt(source, 8);
+        eq(h, DivinityArmorApi.armor(target).physical(), 0, "Breach II breaks remaining armor");
+        eq(h, target.getHealth(), target.getMaxHealth(), "extra wear never enters health");
+        eq(h, DivinityArmorApi.armor(target).magic(), 8, "magic untouched");
+        h.assertTrue(target.getDeltaMovement().lengthSqr() > 0, "bonus break allows same-hit knockback");
+
+        target.invulnerableTime = 0;
+        DivinityArmorApi.set(target, ArmorKind.PHYSICAL, 3);
+        target.hurt(source, 8);
+        eq(h, target.getHealth(), target.getMaxHealth() - 5, "only the original damage overflows");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty")
+    public static void maceBreachUsesReducedMeleeDamageOnly(GameTestHelper h) {
+        var attacker = h.spawnWithNoFreeWill(EntityType.HUSK, 4, 2, 2);
+        var mace = new ItemStack(Items.MACE);
+        mace.enchant(attacker.registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.BREACH), 4);
+        attacker.setItemSlot(EquipmentSlot.MAINHAND, mace);
+        var target = armored(h);
+        target.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 0));
+        target.hurt(target.damageSources().mobAttack(attacker), 5);
+        eq(h, DivinityArmorApi.armor(target).physical(), 9.6, "4 reduced damage plus 60 percent wear");
+        target.invulnerableTime = 0;
+        target.hurt(target.damageSources().thorns(attacker), 5);
+        eq(h, DivinityArmorApi.armor(target).physical(), 5.6, "attributed thorns cannot trigger held mace");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty")
     public static void magicControlRespectsPostDamageArmor(GameTestHelper h) {
         var mob = armored(h);
         h.assertFalse(mob.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100)), "magic blocks slow");
@@ -281,19 +326,22 @@ public final class ArmorGameTests {
     @GameTest(template = "test_empty")
     public static void equipmentRulesPacketAndDisconnectReset(GameTestHelper h) {
         var packet = new com.px8042.divinitymc.network.EquipmentRulesPayload(java.util.Map.of(
-            ResourceLocation.parse("minecraft:iron_chestplate"), new ArmorConfig.Capacity(7.25, 0)));
+            ResourceLocation.parse("minecraft:iron_chestplate"), new ArmorConfig.Capacity(7.25, 0)),
+            new com.px8042.divinitymc.config.EquipmentDefaults.Automatic(false, 3, 0.5));
         var buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), h.getLevel().registryAccess());
         try {
             com.px8042.divinitymc.network.EquipmentRulesPayload.CODEC.encode(buf, packet);
             var decoded = com.px8042.divinitymc.network.EquipmentRulesPayload.CODEC.decode(buf);
             h.assertTrue(packet.equals(decoded), "configured equipment values survive network encoding");
-            com.px8042.divinitymc.client.EquipmentTooltipRules.accept(decoded.equipment());
+            com.px8042.divinitymc.client.EquipmentTooltipRules.accept(decoded.equipment(), decoded.automatic());
+            h.assertTrue(decoded.automatic().equals(com.px8042.divinitymc.client.EquipmentTooltipRules.automatic()), "client retains server conversion settings");
             h.assertTrue(decoded.equipment().equals(com.px8042.divinitymc.client.EquipmentTooltipRules.equipment()), "client retains received values");
         } finally {
             buf.release();
             com.px8042.divinitymc.client.EquipmentTooltipRules.clear();
         }
         h.assertTrue(com.px8042.divinitymc.client.EquipmentTooltipRules.equipment() == null, "disconnect clears server rules instead of leaking into next server");
+        h.assertTrue(com.px8042.divinitymc.client.EquipmentTooltipRules.automatic() == null, "disconnect clears conversion settings");
         h.succeed();
     }
 }

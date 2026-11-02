@@ -16,7 +16,9 @@ import java.nio.file.*;
 @PrefixGameTestTemplate(false)
 public final class EquipmentGameTests {
     private static void capacity(GameTestHelper h, ArmorConfig.Rules rules, String id, double physical, double magic) {
-        h.assertTrue(new ArmorConfig.Capacity(physical, magic).equals(rules.equipment().get(ResourceLocation.parse(id))), id + " capacity");
+        var stack = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id)).getDefaultInstance();
+        var value = com.px8042.divinitymc.armor.EquipmentArmor.resolve(stack, rules.equipment(), rules.autoEquipment(), null);
+        h.assertTrue(new ArmorConfig.Capacity(physical, magic).equals(value), id + " capacity");
     }
     private static void override(JsonObject root, String id, double physical, double magic) {
         var entries = root.getAsJsonArray("equipmentOverrides");
@@ -55,6 +57,26 @@ public final class EquipmentGameTests {
     }
 
     @GameTest(template = "test_empty")
+    public static void modArmorRechecksStackModifiersInItsOwnSlot(GameTestHelper h) {
+        var cow = h.spawnWithNoFreeWill(EntityType.COW, 2, 2, 2);
+        var chest = new ItemStack(BuiltInRegistries.ITEM.get(TestEquipment.CHEST));
+        cow.setItemSlot(EquipmentSlot.CHEST, chest);
+        var state = ArmorService.state(cow);
+        state.set(ArmorKind.PHYSICAL, 12);
+        var modifiers = net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS;
+        var original = chest.get(modifiers);
+        chest.set(modifiers, Items.IRON_BOOTS.getDefaultAttributeModifiers());
+        state = ArmorService.state(cow);
+        h.assertTrue(state.maximum(ArmorKind.PHYSICAL) == 0 && state.current(ArmorKind.PHYSICAL) == 0,
+            "armor assigned to the feet cannot protect the chest; loss of capacity clamps immediately");
+        if (original == null) chest.remove(modifiers); else chest.set(modifiers, original);
+        state = ArmorService.state(cow);
+        h.assertTrue(state.maximum(ArmorKind.PHYSICAL) == 16 && state.current(ArmorKind.PHYSICAL) == 0,
+            "restoring this stack's original modifiers restores capacity without refilling");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty")
     public static void defaultsOverridesAndAutomaticToggle(GameTestHelper h) {
         var root = ArmorConfig.defaultJson();
         h.assertTrue(root.getAsJsonArray("equipmentOverrides").isEmpty(), "fresh config does not freeze built-in equipment values");
@@ -78,7 +100,7 @@ public final class EquipmentGameTests {
         capacity(h, manual, TestEquipment.CHEST.toString(), 7.25, 20);
         h.assertTrue(manual.equipmentSource(TestEquipment.CHEST).equals("override"), "override wins even with automatic disabled");
         root.getAsJsonArray("equipmentOverrides").asList().clear();
-        h.assertFalse(ArmorConfig.parse(root).equipment().containsKey(TestEquipment.CHEST), "automatic off disables unconfigured mod armor");
+        capacity(h, ArmorConfig.parse(root), TestEquipment.CHEST.toString(), 0, 0);
         root.getAsJsonObject("autoEquipment").addProperty("enabled", true);
         capacity(h, ArmorConfig.parse(root), TestEquipment.CHEST.toString(), 24, 4);
         h.succeed();
