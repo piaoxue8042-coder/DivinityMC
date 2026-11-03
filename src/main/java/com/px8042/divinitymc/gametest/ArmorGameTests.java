@@ -102,6 +102,29 @@ public final class ArmorGameTests {
     }
 
     @GameTest(template = "test_empty")
+    public static void maceSmashRespectsEachNearbyTargetsArmor(GameTestHelper h) {
+        var level = h.getLevel();
+        var attacker = net.neoforged.neoforge.common.util.FakePlayerFactory.get(level,
+            new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "MaceTest"));
+        var center = h.spawnWithNoFreeWill(EntityType.COW, 2, 2, 2);
+        var armored = h.spawnWithNoFreeWill(EntityType.COW, 2, 2, 4);
+        var unarmored = h.spawnWithNoFreeWill(EntityType.COW, 4, 2, 2);
+        var immune = h.spawnWithNoFreeWill(EntityType.COW, 1, 2, 2);
+        immune.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
+        armored.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+        DivinityArmorApi.set(armored, ArmorKind.PHYSICAL, 3);
+        attacker.fallDistance = 4;
+        Items.MACE.hurtEnemy(new ItemStack(Items.MACE), center, attacker);
+        eq(h, armored.getDeltaMovement().lengthSqr(), 0, "physical armor blocks nearby smash impulse");
+        eq(h, DivinityArmorApi.armor(armored).physical(), 3, "area control does not consume armor");
+        h.assertTrue(DivinityArmorApi.armor(armored).recoveryDelay() > 0, "blocked push counts as combat");
+        h.assertTrue(unarmored.getDeltaMovement().lengthSqr() > 0, "unarmored bystander is still pushed");
+        eq(h, immune.getDeltaMovement().lengthSqr(), 0, "natural knockback immunity retained");
+        eq(h, DivinityArmorApi.armor(immune).recoveryDelay(), 0, "ineffective push does not start combat");
+        h.succeed();
+    }
+
+    @GameTest(template = "test_empty")
     public static void maceBreachUsesReducedMeleeDamageOnly(GameTestHelper h) {
         var attacker = h.spawnWithNoFreeWill(EntityType.HUSK, 4, 2, 2);
         var mace = new ItemStack(Items.MACE);

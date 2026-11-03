@@ -2,7 +2,7 @@
   "required": true,
   "package": "com.px8042.divinitymc.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": ["AbstractArrowMixin"],
+  "mixins": ["AbstractArrowMixin", "MaceItemMixin"],
   "injectors": {
     "defaultRequire": 1
   },

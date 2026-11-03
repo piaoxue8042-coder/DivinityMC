@@ -59,6 +59,13 @@ public final class DivinityArmorApi {
     }
     public static boolean tryControl(LivingEntity target, Entity source, ResourceLocation control,
                                      Predicate<LivingEntity> naturallyApplicable, Consumer<LivingEntity> action) {
+        if (!tryControl(target, source, control, naturallyApplicable)) return false;
+        action.accept(target);
+        return true;
+    }
+    /** Settle a control attempt when the caller owns the original effect. Apply it only on success. */
+    public static boolean tryControl(LivingEntity target, Entity source, ResourceLocation control,
+                                     Predicate<LivingEntity> naturallyApplicable) {
         server(target);
         if (!target.isAlive() || target instanceof Player p && (p.isSpectator() || p.getAbilities().invulnerable)
             || !naturallyApplicable.test(target)) return false;
@@ -67,7 +74,7 @@ public final class DivinityArmorApi {
             ArmorService.state(target).feedback |= 4;
             return false;
         }
-        action.accept(target); return true;
+        return true;
     }
     /** The hurt result already accounts for invulnerability, cancellation and full shield blocking. */
     public static boolean attack(LivingEntity target, DamageSource source, float damage, List<MobEffectInstance> effects) {
